@@ -276,3 +276,4 @@ if __name__ == "__main__":
     app.run(host="0.0.0.0",debug=True)
 
 #ajuste de texto en descripción del tablero guia 2 parte 2
+#ajuste de texto en descripción del tablero guia 2 parte 3
