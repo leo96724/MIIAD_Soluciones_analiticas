@@ -274,6 +274,9 @@ def update_output_div(date, hour, proy):
 # Run the server
 if __name__ == "__main__":
     app.run(host="0.0.0.0",debug=True)
+<<<<<<< HEAD
 
 #ajuste de texto en descripción del tablero guia 2 parte 2
 #ajuste de texto en descripción del tablero guia 2 parte 3
+=======
+>>>>>>> 8610685 (exponer app en 0.0.0.0:8050 para despliegue)
