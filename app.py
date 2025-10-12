@@ -21,48 +21,15 @@ app.config.suppress_callback_exceptions = True
 
 # Load data from csv
 def load_data(path="datos_energia.csv"):
+    # Ajusta el nombre de la columna de fecha si es distinto (por ej. 'fecha' o 'date')
     df = pd.read_csv(path)
-
-    # Normaliza nombres
-    df.rename(columns={c: c.strip() for c in df.columns}, inplace=True)
-
-    # Columnas candidatas para fecha
-    candidates_exact = {"fecha", "date", "datetime", "timestamp", "ds", "local_timestamp", "time"}
-    candidates_contains = ("fecha", "date", "time", "timestamp")
-
-    date_col = None
-    for c in df.columns:
-        if c.lower() in candidates_exact:
-            date_col = c
+    # Intenta detectar automáticamente la columna de fecha
+    for col in df.columns:
+        if col.lower() in ("fecha", "date", "datetime", "timestamp"):
+            df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
+            df = df.set_index(col).sort_index()
             break
-    if date_col is None:
-        for c in df.columns:
-            cl = c.lower()
-            if any(tok in cl for tok in candidates_contains):
-                date_col = c
-                break
-
-    if date_col is None:
-        raise ValueError(
-            f"No se encontró columna de fecha. Columnas: {list(df.columns)}. "
-            "Renombra la columna de fecha a 'date' o ajusta las candidatas."
-        )
-
-    # Si conoces el formato exacto, descomenta la línea de 'format'
-    # df[date_col] = pd.to_datetime(df[date_col], format="%Y-%m-%d %H:%M:%S", errors="coerce")
-
-    # Si NO conoces el formato exacto, usa el parser por defecto (dayfirst=False)
-    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-
-    df = df.dropna(subset=[date_col]).sort_values(date_col).set_index(date_col)
-
-    # Asegura numéricos
-    for col in ["AT_load_actual_entsoe_transparency", "forecast", "Upper bound", "Lower bound"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-
     return df
-
     
 
 # Cargar datos
@@ -281,4 +248,4 @@ def update_output_div(date, hour, proy):
 
 # Run the server
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8050, debug=True)
+    app.run(debug=True)
