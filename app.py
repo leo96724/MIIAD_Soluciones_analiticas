@@ -56,8 +56,6 @@ def load_data(path="datos_energia.csv"):
 
     return df
 
-# Cargar datos
-data = load_data()
 
 
 # Graficar serie
