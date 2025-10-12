@@ -19,21 +19,46 @@ server = app.server
 app.config.suppress_callback_exceptions = True
 
 
-# Load data from csv
 def load_data(path="datos_energia.csv"):
-    # Ajusta el nombre de la columna de fecha si es distinto (por ej. 'fecha' o 'date')
+    import pandas as pd
+
     df = pd.read_csv(path)
-    # Intenta detectar automáticamente la columna de fecha
-    for col in df.columns:
-        if col.lower() in ("fecha", "date", "datetime", "timestamp"):
-            df[col] = pd.to_datetime(df[col], errors="coerce", dayfirst=True)
-            df = df.set_index(col).sort_index()
+
+    # normaliza nombres (quita espacios)
+    df.rename(columns={c: c.strip() for c in df.columns}, inplace=True)
+
+    # candidatas de fecha
+    candidates_exact = {"fecha", "date", "datetime", "timestamp", "ds", "local_timestamp", "time"}
+    candidates_contains = ("fecha", "date", "time", "timestamp")
+
+    date_col = None
+    for c in df.columns:
+        if c.lower() in candidates_exact:
+            date_col = c
             break
+    if date_col is None:
+        for c in df.columns:
+            cl = c.lower()
+            if any(tok in cl for tok in candidates_contains):
+                date_col = c
+                break
+    if date_col is None:
+        raise ValueError(f"No se encontró columna de fecha. Columnas: {list(df.columns)}")
+
+    # convierte a datetime y usa como índice
+    df[date_col] = pd.to_datetime(df[date_col], errors="coerce")  # quita dayfirst/infer para evitar warnings
+    df = df.dropna(subset=[date_col]).sort_values(date_col).set_index(date_col)
+
+    # fuerza numéricos en las columnas que graficas (si existen)
+    for col in ["AT_load_actual_entsoe_transparency", "forecast", "Upper bound", "Lower bound"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
     return df
-    
 
 # Cargar datos
 data = load_data()
+
 
 # Graficar serie
 def plot_series(data, initial_date, proy):
@@ -248,4 +273,4 @@ def update_output_div(date, hour, proy):
 
 # Run the server
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0",debug=True)
